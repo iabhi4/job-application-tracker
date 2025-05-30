@@ -75,7 +75,7 @@ streamlit run app.py
 - If you want to deploy or use with multiple users, add authentication and use a production database.
 
 ## Screenshots
+![image](https://github.com/user-attachments/assets/ebf21893-b865-47ec-8b58-843b3072b72f)
 
 
-## License
-MIT (or your chosen license)
+![image](https://github.com/user-attachments/assets/ff482f92-55a3-472d-861f-d3df2be07304)
