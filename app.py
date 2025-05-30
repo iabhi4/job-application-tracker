@@ -174,7 +174,7 @@ def view_applications():
     st.markdown("### Applications")
     
     # Search and filter
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([2, 1])
     with col1:
         search = st.text_input("Search (Company/Title/Person)")
     with col2:
@@ -193,17 +193,17 @@ def view_applications():
         if response.status_code == 200:
             data = response.json()
             applications = data['applications']
+            total = data['total']
             
             if not applications:
                 st.info("No applications found.")
                 return
             
-            # Convert to DataFrame for better display
-            df = pd.DataFrame(applications)
-            df['applied_date'] = pd.to_datetime(df['applied_date']).dt.strftime('%Y-%m-%d')
+            # Display total count
+            st.markdown(f"**Total Applications: {total}**")
             
             # Display applications
-            for _, app in df.iterrows():
+            for app in applications:
                 with st.expander(f"{app['job_title']} at {app['company_name']} ({app['status']})"):
                     col1, col2 = st.columns([2, 1])
                     
@@ -239,16 +239,37 @@ def view_applications():
                     if new_status != app['status']:
                         if st.button("Update", key=f"update_{app['id']}"):
                             try:
+                                logger.debug(f"Updating status for application {app['id']} from {app['status']} to {new_status}")
+                                
+                                # Prepare the update data
+                                update_data = {
+                                    "status": new_status,
+                                    "referrer_name": app['referrer_name'],
+                                    "referrer_email": app['referrer_email'],
+                                    "recruiter_name": app['recruiter_name'],
+                                    "recruiter_email": app['recruiter_email']
+                                }
+                                
+                                logger.debug(f"Sending update data: {update_data}")
+                                
+                                # Send the update request
                                 response = requests.put(
                                     f"{API_URL}/applications/{app['id']}",
-                                    json={"status": new_status}
+                                    headers={"Content-Type": "application/json"},
+                                    json=update_data
                                 )
+                                
+                                logger.debug(f"Status update response: {response.status_code}")
+                                logger.debug(f"Status update content: {response.text}")
+                                
                                 if response.status_code == 200:
-                                    st.success("Status updated!")
+                                    st.success("Status updated successfully!")
+                                    # Force a complete refresh of the page
                                     st.rerun()
                                 else:
-                                    st.error("Failed to update status")
+                                    st.error(f"Failed to update status: {response.json().get('detail', 'Unknown error')}")
                             except Exception as e:
+                                logger.error(f"Error updating status: {str(e)}", exc_info=True)
                                 st.error(f"Error updating status: {str(e)}")
                     
                     # Delete button
