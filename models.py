@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text
+from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
@@ -19,4 +19,5 @@ class JobApplication(Base):
     recruiter_name = Column(String(255), nullable=True)
     recruiter_email = Column(String(255), nullable=True)
     status = Column(String(50), nullable=False, default="Applied")
+    is_tailored = Column(Boolean, nullable=False, default=False)
     applied_date = Column(DateTime, nullable=False, default=datetime.now) 

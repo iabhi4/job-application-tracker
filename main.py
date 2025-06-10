@@ -41,6 +41,7 @@ class ApplicationUpdate(BaseModel):
     referrer_email: Optional[str] = None
     recruiter_name: Optional[str] = None
     recruiter_email: Optional[str] = None
+    is_tailored: Optional[bool] = None
 
 def get_file_extension(filename: str) -> str:
     """Get the file extension from a filename."""
@@ -57,7 +58,8 @@ async def create_application(
     referrer_email: Optional[str] = Form(None),
     recruiter_name: Optional[str] = Form(None),
     recruiter_email: Optional[str] = Form(None),
-    status: str = Form("Applied")
+    status: str = Form("Applied"),
+    is_tailored: bool = Form(False)
 ):
     try:
         # Generate a unique identifier for this application
@@ -91,6 +93,7 @@ async def create_application(
             recruiter_name=recruiter_name,
             recruiter_email=recruiter_email,
             status=status,
+            is_tailored=is_tailored,
             applied_date=datetime.now()
         )
         
@@ -145,6 +148,16 @@ async def get_applications(
     finally:
         db.close()
 
+@app.get("/applications/stats")
+async def get_application_stats():
+    db = SessionLocal()
+    try:
+        # Get all applications without pagination for statistics
+        applications = db.query(JobApplication).order_by(JobApplication.applied_date.desc()).all()
+        return applications
+    finally:
+        db.close()
+
 @app.get("/applications/{application_id}")
 async def get_application(application_id: int):
     db = SessionLocal()
@@ -181,6 +194,8 @@ async def update_application(
             application.recruiter_name = update_data.recruiter_name
         if update_data.recruiter_email is not None:
             application.recruiter_email = update_data.recruiter_email
+        if update_data.is_tailored is not None:
+            application.is_tailored = update_data.is_tailored
         
         try:
             db.commit()

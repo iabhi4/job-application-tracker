@@ -116,6 +116,7 @@ def create_application_form():
             recruiter_email = st.text_input("Recruiter Email")
         
         status = st.selectbox("Status", STATUS_OPTIONS)
+        is_tailored = st.checkbox("Is Tailored", value=False)
         
         submitted = st.form_submit_button("Submit Application")
         
@@ -143,7 +144,8 @@ def create_application_form():
                     'referrer_email': referrer_email or None,
                     'recruiter_name': recruiter_name or None,
                     'recruiter_email': recruiter_email or None,
-                    'status': status
+                    'status': status,
+                    'is_tailored': is_tailored
                 }
                 
                 logger.debug(f"Sending request to {API_URL}/applications/")
@@ -212,6 +214,7 @@ def view_applications():
                         st.markdown(f"**Position:** {app['job_title']}")
                         st.markdown(f"**Applied:** {app['applied_date']}")
                         st.markdown(f"**Status:** {app['status']}")
+                        st.markdown(f"**Is Tailored:** {'Yes' if app['is_tailored'] else 'No'}")
                         st.markdown(f"**Job Description:**\n{app['job_description']}")
                         
                         if app['referrer_name'] or app['recruiter_name']:
@@ -228,18 +231,26 @@ def view_applications():
                         if app['cover_letter_path']:
                             st.markdown(f"- [Cover Letter]({API_URL}/{app['cover_letter_path']})")
                     
-                    # Update status
-                    new_status = st.selectbox(
-                        "Update Status",
-                        STATUS_OPTIONS,
-                        index=STATUS_OPTIONS.index(app['status']),
-                        key=f"status_{app['id']}"
-                    )
+                    # Update status and is_tailored
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        new_status = st.selectbox(
+                            "Update Status",
+                            STATUS_OPTIONS,
+                            index=STATUS_OPTIONS.index(app['status']),
+                            key=f"status_{app['id']}"
+                        )
+                    with col2:
+                        new_is_tailored = st.checkbox(
+                            "Is Tailored",
+                            value=app['is_tailored'],
+                            key=f"tailored_{app['id']}"
+                        )
                     
-                    if new_status != app['status']:
+                    if new_status != app['status'] or new_is_tailored != app['is_tailored']:
                         if st.button("Update", key=f"update_{app['id']}"):
                             try:
-                                logger.debug(f"Updating status for application {app['id']} from {app['status']} to {new_status}")
+                                logger.debug(f"Updating application {app['id']}")
                                 
                                 # Prepare the update data
                                 update_data = {
@@ -247,7 +258,8 @@ def view_applications():
                                     "referrer_name": app['referrer_name'],
                                     "referrer_email": app['referrer_email'],
                                     "recruiter_name": app['recruiter_name'],
-                                    "recruiter_email": app['recruiter_email']
+                                    "recruiter_email": app['recruiter_email'],
+                                    "is_tailored": new_is_tailored
                                 }
                                 
                                 logger.debug(f"Sending update data: {update_data}")
@@ -301,10 +313,9 @@ def get_application_count():
 
 def get_application_stats():
     try:
-        response = requests.get(f"{API_URL}/applications/")
+        response = requests.get(f"{API_URL}/applications/stats")
         if response.status_code == 200:
-            data = response.json()
-            applications = data['applications']
+            applications = response.json()
             
             # Convert to DataFrame for easier date filtering
             df = pd.DataFrame(applications)
