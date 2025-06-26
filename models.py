@@ -20,4 +20,5 @@ class JobApplication(Base):
     recruiter_email = Column(String(255), nullable=True)
     status = Column(String(50), nullable=False, default="Applied")
     is_tailored = Column(Boolean, nullable=False, default=False)
+    my_location = Column(String(255), nullable=True)
     applied_date = Column(DateTime, nullable=False, default=datetime.now) 

@@ -99,6 +99,7 @@ def create_application_form():
         job_title = st.text_input("Job Title")
         company_name = st.text_input("Company Name")
         job_description = st.text_area("Job Description")
+        my_location = st.text_input("My Location (Optional)")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -140,6 +141,7 @@ def create_application_form():
                     'job_title': job_title,
                     'company_name': company_name,
                     'job_description': job_description,
+                    'my_location': my_location or None,
                     'referrer_name': referrer_name or None,
                     'referrer_email': referrer_email or None,
                     'recruiter_name': recruiter_name or None,
@@ -215,6 +217,8 @@ def view_applications():
                         st.markdown(f"**Applied:** {app['applied_date']}")
                         st.markdown(f"**Status:** {app['status']}")
                         st.markdown(f"**Is Tailored:** {'Yes' if app['is_tailored'] else 'No'}")
+                        if app['my_location']:
+                            st.markdown(f"**My Location:** {app['my_location']}")
                         st.markdown(f"**Job Description:**\n{app['job_description']}")
                         
                         if app['referrer_name'] or app['recruiter_name']:
@@ -231,8 +235,8 @@ def view_applications():
                         if app['cover_letter_path']:
                             st.markdown(f"- [Cover Letter]({API_URL}/{app['cover_letter_path']})")
                     
-                    # Update status and is_tailored
-                    col1, col2 = st.columns(2)
+                    # Update status, is_tailored, and my_location
+                    col1, col2, col3 = st.columns(3)
                     with col1:
                         new_status = st.selectbox(
                             "Update Status",
@@ -246,8 +250,14 @@ def view_applications():
                             value=app['is_tailored'],
                             key=f"tailored_{app['id']}"
                         )
+                    with col3:
+                        new_my_location = st.text_input(
+                            "My Location",
+                            value=app['my_location'] or "",
+                            key=f"location_{app['id']}"
+                        )
                     
-                    if new_status != app['status'] or new_is_tailored != app['is_tailored']:
+                    if new_status != app['status'] or new_is_tailored != app['is_tailored'] or new_my_location != (app['my_location'] or ""):
                         if st.button("Update", key=f"update_{app['id']}"):
                             try:
                                 logger.debug(f"Updating application {app['id']}")
@@ -259,7 +269,8 @@ def view_applications():
                                     "referrer_email": app['referrer_email'],
                                     "recruiter_name": app['recruiter_name'],
                                     "recruiter_email": app['recruiter_email'],
-                                    "is_tailored": new_is_tailored
+                                    "is_tailored": new_is_tailored,
+                                    "my_location": new_my_location if new_my_location else None
                                 }
                                 
                                 logger.debug(f"Sending update data: {update_data}")
@@ -290,7 +301,8 @@ def view_applications():
                             response = requests.delete(f"{API_URL}/applications/{app['id']}")
                             if response.status_code == 200:
                                 st.success("Application deleted!")
-                                st.rerun()
+                                # Force a complete refresh of the page to update stats and count
+                                st.experimental_rerun()
                             else:
                                 st.error("Failed to delete application")
                         except Exception as e:

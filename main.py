@@ -42,6 +42,7 @@ class ApplicationUpdate(BaseModel):
     recruiter_name: Optional[str] = None
     recruiter_email: Optional[str] = None
     is_tailored: Optional[bool] = None
+    my_location: Optional[str] = None
 
 def get_file_extension(filename: str) -> str:
     """Get the file extension from a filename."""
@@ -59,7 +60,8 @@ async def create_application(
     recruiter_name: Optional[str] = Form(None),
     recruiter_email: Optional[str] = Form(None),
     status: str = Form("Applied"),
-    is_tailored: bool = Form(False)
+    is_tailored: bool = Form(False),
+    my_location: Optional[str] = Form(None)
 ):
     try:
         # Generate a unique identifier for this application
@@ -94,6 +96,7 @@ async def create_application(
             recruiter_email=recruiter_email,
             status=status,
             is_tailored=is_tailored,
+            my_location=my_location,
             applied_date=datetime.now()
         )
         
@@ -196,6 +199,8 @@ async def update_application(
             application.recruiter_email = update_data.recruiter_email
         if update_data.is_tailored is not None:
             application.is_tailored = update_data.is_tailored
+        if update_data.my_location is not None:
+            application.my_location = update_data.my_location
         
         try:
             db.commit()
